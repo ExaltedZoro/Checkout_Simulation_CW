@@ -45,7 +45,7 @@ class Lane:
 
 	def can_accept_customers(self):
 		"""Returns whether the queue size is below capacity and the lane is open"""
-		return len(self.customers) < self.capacity and self.opened
+		return len(self.customers) < self.capacity and self.is_open()
 
 	def open(self):
 		"""Opens the lane"""
