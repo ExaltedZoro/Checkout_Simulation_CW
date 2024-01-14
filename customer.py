@@ -4,8 +4,8 @@ from random import randint
 
 class Customer:
 
-	def __init__(self):
-		self.id = uuid4()
+	def __init__(self, id):
+		self.id = id
 		self.basket_items = randint(1, 30)
 
 		self.time_at_cashier = self.basket_items * 4
