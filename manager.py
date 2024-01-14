@@ -44,8 +44,7 @@ class SimulationManager:
 		while True:
 			for i in range(30):
 				await self.sim_loop()
-				# time.sleep(1)
-				input()
+				time.sleep(1)
 			print("Would you like to continue the simulation?")
 			carry_on = input("Y/N: ")
 			if carry_on == "N":
@@ -63,21 +62,21 @@ class SimulationManager:
 
 		# Use this to enable an actual timer-thing
 		# await asyncio.sleep(1.0)
-		self.elapsed += 1.0
+		self.elapsed += 1
 
-		if self.elapsed == 1.0:
+		if self.elapsed == 1:
 			# If it's the first tick of the simulation, up to 10 customers are generated
 			customers = randint(1, 10)
-			self.lost_customers += [Customer() for i in range(0, customers)]
+			self.lost_customers += [Customer(i + 1) for i in range(customers)]
 			self.total_customers_seen += customers
 			for customer in self.lost_customers:
 				print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
 		elif randint(1, 5) == 1:
 			# Each tick after the first has a 20% chance of generating a customer
-			customer = Customer()
+			self.total_customers_seen += 1
+			customer = Customer(self.total_customers_seen)
 			print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
 			self.lost_customers.append(customer)
-			self.total_customers_seen += 1
 
 		open_lanes = self.get_open_lanes()
 
@@ -86,10 +85,14 @@ class SimulationManager:
 		assigned_customers = []
 
 		for customer in self.lost_customers:
-			# If the customers is able to enter self-service, the program attempts to add them to it regardless of status
+			# If the customer is able to enter self-service, the program attempts to add them to it regardless of status
 			if customer.basket_items < 10:
 				self_service = self.lanes[0]
-				if self_service.can_accept_customers():
+				# If self-service is not full, we add the customer to it regardless of other circumstances,
+				# which includes opening it specifically for that customer
+				if self_service.queue_size() < self_service.capacity:
+					if not self_service.is_open():
+						self_service.open()
 					self_service.customers.append(customer)
 					# Add the customer to a separate list to be removed later.
 					# Stops the for loop messing up because the list is modified mid-loop
@@ -118,7 +121,7 @@ class SimulationManager:
 						shortest_queue = lane
 				shortest_queue.customers.append(customer)
 				assigned_customers.append(customer)
-				print(f"Customer {customer.id} with {customer.basket_items} basket items {'and a lotto ticket ' if customer.lottery else ''}assigned to {f'Lane {shortest_queue.id}' if shortest_queue.is_regular else 'Self-Service'}\n")
+				print(f"Customer {customer.id} with {customer.basket_items} basket items {'and a lotto ticket ' if customer.lottery else ''}assigned to {f'Lane {shortest_queue.id}'}\n")
 			else:
 				# If we have reached this code and the customer can enter self-service, then we know for certain that no
 				# other customers will be able to be assigned to lanes during this tick due to every lane being full.
@@ -138,10 +141,6 @@ class SimulationManager:
 
 		self.balance_lanes()
 
-		print(f"Current unassigned customer count: {len(self.lost_customers)}")
-		print(f"Current processed customer count: {self.total_customers_processed}")
-		print(f"Tick {self.elapsed} complete")
-
 		# Output the lanes every 30 seconds
 		if self.elapsed % 30 == 0:
 			self.format_output()
@@ -149,13 +148,13 @@ class SimulationManager:
 	def format_output(self):
 		"""Formats and outputs the current lane status and customer counts"""
 
+		print(f"Lane status at {self.elapsed // 60}:{f'{self.elapsed % 60}0' if self.elapsed % 60 == 0 else f'{self.elapsed % 60}'}")
 		customers_processed = self.output_lanes()
 
-		self.total_customers_processed += customers_processed
 		print("--------------------------------------")
-		print(f"Tick {self.elapsed} / {self.duration}")
-		print(f"Customers waiting this tick: {len(self.lost_customers)}")
-		print(f"Customers processed this tick: {customers_processed}")
+		print(f"Customers currently waiting: {len(self.lost_customers)}")
+		print(f"Customers processed so far: {self.total_customers_processed}")
+		print(f"Total customers seen: {self.total_customers_seen}")
 		print("\n")
 
 	def output_lanes(self):
@@ -173,19 +172,18 @@ class SimulationManager:
 		"""Returns a list of currently open lanes. Excludes self-service if False given in arguments"""
 		open_lanes = []
 		for lane in self.lanes:
-			if include_self_service:
-				if lane.is_open():
-					open_lanes.append(lane)
-			else:
-				if lane.is_open() & lane.is_regular:
-					open_lanes.append(lane)
+			if include_self_service & lane.is_open():
+				open_lanes.append(lane)
+			elif lane.is_open() & lane.is_regular:
+				open_lanes.append(lane)
 
 		return open_lanes
 
 	def open_lane(self):
 		"""Searches the list for a closed cashier lane, opens it and returns it"""
-		for lane in self.lanes:
-			if not lane.is_open() & (not lane.is_regular):
+		for i in range(1, len(self.lanes)):
+			lane = self.lanes[i]
+			if not lane.is_open():
 				lane.open()
 				return lane
 		return None
