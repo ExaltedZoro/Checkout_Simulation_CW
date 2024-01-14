@@ -50,10 +50,12 @@ class Lane:
 	def open(self):
 		"""Opens the lane"""
 		self.opened = True
+		print(f"{f'Lane {self.id}' if self.is_regular else 'Self-Service'} opened\n")
 
 	def close(self):
 		"""Closes the lane"""
 		self.opened = False
+		print(f"{f'Lane {self.id}' if self.is_regular else 'Self-Service'} closed\n")
 
 	def is_open(self):
 		"""Returns whether the lane is open or closed"""
@@ -86,7 +88,7 @@ class SelfServiceLane(Lane):
 					# Other list indexes are not altered by this, leaving the for loop untouched
 				else:
 					# If the queue size is not above 8, removing the customer from the list would mess with the for loop
-					# so we add it to a separate list to be removed later
+					# so, we add it to a separate list to be removed later
 					customers_to_remove.append(customer)
 				print(f"Customer {customer.id} finished checkout at Self Service")
 				self.customer_processed += 1
