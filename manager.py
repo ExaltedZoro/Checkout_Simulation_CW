@@ -86,7 +86,7 @@ class SimulationManager:
 		assigned_customers = []
 
 		for customer in self.lost_customers:
-			# If the customers is able to enter self-service, the program attempts to add them to it regardless
+			# If the customers is able to enter self-service, the program attempts to add them to it regardless of status
 			if customer.basket_items < 10:
 				self_service = self.lanes[0]
 				if self_service.can_accept_customers():
@@ -105,17 +105,27 @@ class SimulationManager:
 			# If there are no available regular lanes, we open a new one and add it to the list
 			if not available_regular_lanes:
 				opened_lane = self.open_lane()
-				available_regular_lanes.append(opened_lane)
+				if opened_lane:
+					available_regular_lanes.append(opened_lane)
 
-			# Initialise the lane with the shortest queue to a default value
-			shortest_queue = available_regular_lanes[0]
-			for lane in available_regular_lanes:
-				# If the current shortest queue is larger than the new queue, the new lane becomes the shortest
-				if lane.queue_size() < shortest_queue.queue_size():
-					shortest_queue = lane
-			shortest_queue.customers.append(customer)
-			assigned_customers.append(customer)
-			print(f"Customer {customer.id} with {customer.basket_items} basket items {'and a lotto ticket ' if customer.lottery else ''}assigned to {f'Lane {shortest_queue.id}' if shortest_queue.is_regular else 'Self-Service'}\n")
+			# Check if there is an entry in the list to avoid crashes when lanes potentially fill up
+			if available_regular_lanes:
+				# Initialise the lane with the shortest queue to a default value
+				shortest_queue = available_regular_lanes[0]
+				for lane in available_regular_lanes:
+					# If the current shortest queue is larger than the new queue, the new lane becomes the shortest
+					if lane.queue_size() < shortest_queue.queue_size():
+						shortest_queue = lane
+				shortest_queue.customers.append(customer)
+				assigned_customers.append(customer)
+				print(f"Customer {customer.id} with {customer.basket_items} basket items {'and a lotto ticket ' if customer.lottery else ''}assigned to {f'Lane {shortest_queue.id}' if shortest_queue.is_regular else 'Self-Service'}\n")
+			else:
+				# If we have reached this code and the customer can enter self-service, then we know for certain that no
+				# other customers will be able to be assigned to lanes during this tick due to every lane being full.
+				# If the customer can't enter self-service, then that lane may still be available to other customers that
+				# can enter it, so we don't break the loop
+				if customer.basket_items < 10:
+					break
 
 		# The customers that were assigned to lanes this tick are removed from the lost customers list
 		for customer in assigned_customers:
@@ -173,22 +183,23 @@ class SimulationManager:
 		return open_lanes
 
 	def open_lane(self):
-		"""Searches the list for a closed lane, opens it and returns it"""
+		"""Searches the list for a closed cashier lane, opens it and returns it"""
 		for lane in self.lanes:
-			if not lane.is_open():
+			if not lane.is_open() & (not lane.is_regular):
 				lane.open()
 				return lane
 		return None
 
 	def balance_lanes(self):
-		"""Moves customers from longer lanes to shorter ones. Ignore self-service entirely"""
+		"""Balances the cashier lanes so that every open lane has a queue size
+		of no more or less than 1 compared to all other lanes"""
 		open_lanes = self.get_open_lanes(False)
 		total_customers = 0
 		for lane in open_lanes:
 			total_customers += lane.queue_size()
 		# Taking the average queue size of each open lane and then finding the closest integer both above and below it
-		# guarantees that when as balanced as possible each lane will either have a queue size of the integer above the
-		# average or the integer below the average
+		# guarantees that when as balanced as possible each lane will either have a queue size of the integer above or
+		# below the average
 		average_queue = total_customers / len(open_lanes)
 		upper = math.ceil(average_queue)
 		lower = math.floor(average_queue)
