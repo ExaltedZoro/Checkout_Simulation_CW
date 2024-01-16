@@ -24,6 +24,12 @@ class Lane:
 			self.output_customer_processed()
 			self.customer_processed = True
 
+	def add_customer(self, customer):
+		self.customers.append(customer)
+
+	def pop(self):
+		return self.customers.pop()
+
 	def output_customer_processed(self):
 		"""Lets the user know that a customer has been processed and removed from a lane"""
 		print(f"Customer finished checkout at {'Cashier' if self.is_regular else 'Self-Service'} Lane")
