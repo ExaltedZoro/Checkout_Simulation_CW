@@ -32,7 +32,7 @@ class Lane:
 
 	def output_customer_processed(self):
 		"""Lets the user know that a customer has been processed and removed from a lane"""
-		print(f"Customer finished checkout at {'Cashier' if self.is_regular else 'Self-Service'} Lane")
+		print(f"Customer finished checkout at {'Cashier' if self.is_regular else 'Self-Service'} Lane\n")
 
 	def data(self):
 		"""Returns a dictionary of the lanes data"""
