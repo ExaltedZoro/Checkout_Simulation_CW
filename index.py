@@ -1,3 +1,6 @@
+# index.py
+# The main file from which to run the program
+
 from manager import SimulationManager
 
 

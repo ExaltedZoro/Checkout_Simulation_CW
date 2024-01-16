@@ -1,3 +1,13 @@
+# manager.py
+
+# Credits:
+# -> Initial framework by Olivia
+# -> 50/50 split on contribution by Olivia and Nate
+
+# Simulation manager class
+# -> Determines if the simulation is running and when to stop
+# -> Formats and outputs data from lanes and customers
+
 import math
 import time
 from random import randint
@@ -5,6 +15,8 @@ from time import perf_counter
 
 from lanes import RegularLane, SelfServiceLane
 from customer import Customer
+
+from constants import SELF_SERVICE_PROCESS_TIME, REGULAR_PROCESS_TIME
 
 
 class SimulationManager:
@@ -16,13 +28,14 @@ class SimulationManager:
 
 		self.total_customers_seen = 0
 		self.total_customers_processed = 0
+
 		self.lanes = [
-			SelfServiceLane(True),
-			RegularLane(1, True),
-			RegularLane(2),
+			SelfServiceLane(1, True),
+			RegularLane(2, True),
 			RegularLane(3),
 			RegularLane(4),
-			RegularLane(5)
+			RegularLane(5),
+			RegularLane(6)
 		]
 
 		self.lost_customers = []
@@ -37,12 +50,13 @@ class SimulationManager:
 			print("Would you like to continue the simulation?")
 			carry_on = input("Y/N: ")
 			if carry_on == "N":
-				break
+				self.running = False
 
-		print("Simulation ended")
+		print("\n-- Simulation ended --")
 		print(f"Total customers seen: {self.total_customers_seen}")
 		print(f"Total customers processed: {self.total_customers_processed}\n")
 		print("Lane status at simulation end")
+
 		self.output_lanes()
 
 	def sim_loop(self):
@@ -57,18 +71,13 @@ class SimulationManager:
 			self.lost_customers += [Customer(i + 1) for i in range(customers)]
 			self.total_customers_seen += customers
 			for customer in self.lost_customers:
-				print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}")
-				if customer.basket_items < 10:
-					print(f"Time to checkout at self-service: {customer.time_at_self_service} seconds")
-				print(f"Time to checkout at cashier: {customer.time_at_cashier} seconds\n")
+				self.introduce_customer(customer)
+
 		elif randint(1, 10) == 1:
 			# Each tick after the first has a 10% chance of generating a customer
 			self.total_customers_seen += 1
 			customer = Customer(self.total_customers_seen)
-			print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}")
-			if customer.basket_items < 10:
-				print(f"Time to checkout at self-service: {customer.time_at_self_service} seconds")
-			print(f"Time to checkout at cashier: {customer.time_at_cashier} seconds\n")
+			self.introduce_customer(customer)
 			self.lost_customers.append(customer)
 
 		open_lanes = self.get_open_lanes()
@@ -142,6 +151,13 @@ class SimulationManager:
 		if self.elapsed % 30 == 0:
 			self.format_output()
 
+	def introduce_customer(self, customer):
+		"""Outputs customer data when added to the simulation"""
+		print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}")
+		if customer.basket_items < 10:
+			print(f"Time to checkout at self-service: {customer.basket_items * SELF_SERVICE_PROCESS_TIME} seconds")
+		print(f"Time to checkout at cashier: {customer.basket_items * REGULAR_PROCESS_TIME} seconds\n")
+
 	def format_output(self):
 		"""Formats and outputs the current lane status and customer counts"""
 
@@ -158,7 +174,7 @@ class SimulationManager:
 		"""Part of the format_output method. Made separate to allow the simulation end to use just this bit"""
 		for lane in self.lanes:
 			data = lane.data()
-			print(f"{data['type']} Lane {data['id'] if data['type'] == 'Cashier' else ''} - {data['customers'] if data['open'] else 'Closed'}")
+			print(f"{data['type']:12} (Lane {data['id']}) - {data['customers'] if data['open'] else 'Closed'}")
 
 	def get_open_lanes(self, include_self_service=True):
 		"""Returns a list of currently open lanes. Excludes self-service if False given in arguments"""
@@ -198,6 +214,8 @@ class SimulationManager:
 				while lane.queue_size() > upper:
 					if lane_2.queue_size() < lower:
 						customer = lane.pop()
+						# Resetting time elapsed to prevent issues with how the class determines when to remove an item
+						customer.time_elapsed = 0
 						lane_2.add_customer(customer)
 						print(f"Customer {customer.id} moved from Lane {self.lanes.index(lane)} to {self.lanes.index(lane_2)}")
 					else:

@@ -1,15 +1,26 @@
+# lanes.py
+
+# Credits:
+# -> Initial framework by Olivia
+# -> Main code by Nate
+
+# Includes the Lane, SelfServiceLane and RegularLane classes
+# SelfService and RegularLane are subclasses of Lane
+
 from time import perf_counter
-from uuid import uuid4
 from functools import reduce
+
+from constants import SELF_SERVICE_PROCESS_TIME, REGULAR_PROCESS_TIME
 
 
 class Lane:
-	def __init__(self, capacity, opened=False):
+	def __init__(self, capacity, id, opened=False):
 		self.created = perf_counter()
-		self.id = uuid4()
+		self.id = id
 		self.is_regular = None
 		self.customers = []
 		self.customer_processed = False
+		self.process_time = None
 		self.opened = opened
 		self.capacity = capacity
 
@@ -18,7 +29,7 @@ class Lane:
 		self.customer_processed = False
 		if len(self.customers) == 0:
 			return
-		remove_customer = self.customers[0].tick_cashier()
+		remove_customer = self.customers[0].process_tick(self.process_time)
 		if remove_customer:
 			self.customers.pop(0)
 			self.output_customer_processed()
@@ -69,8 +80,9 @@ class Lane:
 
 
 class SelfServiceLane(Lane):
-	def __init__(self, opened=False):
-		super().__init__(15, opened)
+	def __init__(self, id, opened=False):
+		super().__init__(15, id, opened)
+		self.process_time = SELF_SERVICE_PROCESS_TIME
 		self.is_regular = False
 		self.customer_processed = 0
 
@@ -83,7 +95,7 @@ class SelfServiceLane(Lane):
 
 		for i in range(min(8, len(self.customers))):
 			customer = self.customers[i]
-			remove_customer = customer.tick_self_service()
+			remove_customer = customer.process_tick(self.process_time)
 			if remove_customer:
 				# Checks if there is a customer that is not currently at a till
 				if len(self.customers) > 8:
@@ -110,7 +122,7 @@ class SelfServiceLane(Lane):
 
 
 class RegularLane(Lane):
-	def __init__(self, number, opened=False):
-		super().__init__(5, opened)
+	def __init__(self, id, opened=False):
+		super().__init__(5, id, opened)
+		self.process_time = REGULAR_PROCESS_TIME
 		self.is_regular = True
-		self.id = number
