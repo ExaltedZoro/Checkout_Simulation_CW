@@ -2,24 +2,13 @@ import math
 import time
 from random import randint
 from time import perf_counter
-from time import sleep
-import asyncio
 
 from lanes import RegularLane, SelfServiceLane
 from customer import Customer
 
-"""
-TO-DO
-Balancing lanes - DONE
-Add logic to assign customers to the shortest queue possible out of available open lanes - SHOULD BE DONE
-Make self service process items are different times (move logic out of the lane and to the customer) - DONE
-"""
-
 
 class SimulationManager:
-
 	def __init__(self):
-
 		self.running = False
 		self.start_time = None
 		self.duration = 60.0
@@ -38,12 +27,12 @@ class SimulationManager:
 
 		self.lost_customers = []
 
-	async def start_sim(self):
+	def start_sim(self):
 		self.running = True
 		self.start_time = perf_counter()
-		while True:
+		while self.running:
 			for i in range(30):
-				await self.sim_loop()
+				self.sim_loop()
 				time.sleep(1)
 			print("Would you like to continue the simulation?")
 			carry_on = input("Y/N: ")
@@ -56,12 +45,10 @@ class SimulationManager:
 		print("Lane status at simulation end")
 		self.output_lanes()
 
-	async def sim_loop(self):
+	def sim_loop(self):
 		"""The brain of the program.
 		Generates customers, assigns them to lanes and then increments each of those lanes"""
 
-		# Use this to enable an actual timer-thing
-		# await asyncio.sleep(1.0)
 		self.elapsed += 1
 
 		if self.elapsed == 1:
@@ -71,8 +58,8 @@ class SimulationManager:
 			self.total_customers_seen += customers
 			for customer in self.lost_customers:
 				print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
-		elif randint(1, 5) == 1:
-			# Each tick after the first has a 20% chance of generating a customer
+		elif randint(1, 10) == 1:
+			# Each tick after the first has a 10% chance of generating a customer
 			self.total_customers_seen += 1
 			customer = Customer(self.total_customers_seen)
 			print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
@@ -93,7 +80,7 @@ class SimulationManager:
 				if self_service.queue_size() < self_service.capacity:
 					if not self_service.is_open():
 						self_service.open()
-					self_service.customers.append(customer)
+					self_service.add_customer(customer)
 					# Add the customer to a separate list to be removed later.
 					# Stops the for loop messing up because the list is modified mid-loop
 					assigned_customers.append(customer)
@@ -119,7 +106,7 @@ class SimulationManager:
 					# If the current shortest queue is larger than the new queue, the new lane becomes the shortest
 					if lane.queue_size() < shortest_queue.queue_size():
 						shortest_queue = lane
-				shortest_queue.customers.append(customer)
+				shortest_queue.add_customer(customer)
 				assigned_customers.append(customer)
 				print(f"Customer {customer.id} with {customer.basket_items} basket items {'and a lotto ticket ' if customer.lottery else ''}assigned to {f'Lane {shortest_queue.id}'}\n")
 			else:
@@ -140,6 +127,10 @@ class SimulationManager:
 			self.total_customers_processed += int(lane.customer_processed)
 
 		self.balance_lanes()
+
+		# If the total number of customers outside of lanes exceeds 40, raise an overflow error to say so.
+		if len(self.lost_customers) > 40:
+			raise OverflowError("Lane saturation has occurred. Unassigned customer count has reached 40")
 
 		# Output the lanes every 30 seconds
 		if self.elapsed % 30 == 0:
@@ -205,8 +196,8 @@ class SimulationManager:
 			for lane_2 in open_lanes:
 				while lane.queue_size() > upper:
 					if lane_2.queue_size() < lower:
-						customer = lane.customers.pop()
-						lane_2.customers.append(customer)
+						customer = lane.pop()
+						lane_2.add_customer(customer)
 						print(f"Customer {customer.id} moved from Lane {self.lanes.index(lane)} to {self.lanes.index(lane_2)}")
 					else:
 						break
