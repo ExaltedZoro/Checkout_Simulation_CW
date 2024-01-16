@@ -65,7 +65,7 @@ class SimulationManager:
 			# Each tick after the first has a 10% chance of generating a customer
 			self.total_customers_seen += 1
 			customer = Customer(self.total_customers_seen)
-			print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
+			print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}")
 			if customer.basket_items < 10:
 				print(f"Time to checkout at self-service: {customer.time_at_self_service} seconds")
 			print(f"Time to checkout at cashier: {customer.time_at_cashier} seconds\n")
