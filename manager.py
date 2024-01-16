@@ -57,12 +57,18 @@ class SimulationManager:
 			self.lost_customers += [Customer(i + 1) for i in range(customers)]
 			self.total_customers_seen += customers
 			for customer in self.lost_customers:
-				print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
+				print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}")
+				if customer.basket_items < 10:
+					print(f"Time to checkout at self-service: {customer.time_at_self_service} seconds")
+				print(f"Time to checkout at cashier: {customer.time_at_cashier} seconds\n")
 		elif randint(1, 10) == 1:
 			# Each tick after the first has a 10% chance of generating a customer
 			self.total_customers_seen += 1
 			customer = Customer(self.total_customers_seen)
 			print(f"Customer {customer.id} generated with {customer.basket_items} items{' and a lotto ticket!' if customer.lottery else ''}\n")
+			if customer.basket_items < 10:
+				print(f"Time to checkout at self-service: {customer.time_at_self_service} seconds")
+			print(f"Time to checkout at cashier: {customer.time_at_cashier} seconds\n")
 			self.lost_customers.append(customer)
 
 		open_lanes = self.get_open_lanes()
@@ -140,7 +146,7 @@ class SimulationManager:
 		"""Formats and outputs the current lane status and customer counts"""
 
 		print(f"Lane status at {self.elapsed // 60}:{f'{self.elapsed % 60}0' if self.elapsed % 60 == 0 else f'{self.elapsed % 60}'}")
-		customers_processed = self.output_lanes()
+		self.output_lanes()
 
 		print("--------------------------------------")
 		print(f"Customers currently waiting: {len(self.lost_customers)}")
@@ -150,14 +156,9 @@ class SimulationManager:
 
 	def output_lanes(self):
 		"""Part of the format_output method. Made separate to allow the simulation end to use just this bit"""
-		customers_processed = 0
-
 		for lane in self.lanes:
 			data = lane.data()
-			customers_processed += int(data["customer_processed"])
 			print(f"{data['type']} Lane {data['id'] if data['type'] == 'Cashier' else ''} - {data['customers'] if data['open'] else 'Closed'}")
-
-		return customers_processed
 
 	def get_open_lanes(self, include_self_service=True):
 		"""Returns a list of currently open lanes. Excludes self-service if False given in arguments"""
