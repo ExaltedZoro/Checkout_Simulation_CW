@@ -36,9 +36,11 @@ class Lane:
 			self.customer_processed = True
 
 	def add_customer(self, customer):
+		"""Adds a customer to the end of the lane queue"""
 		self.customers.append(customer)
 
 	def pop(self):
+		"""Returns the last customer in the queue"""
 		return self.customers.pop()
 
 	def output_customer_processed(self):
