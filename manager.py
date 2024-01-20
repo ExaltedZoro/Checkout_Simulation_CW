@@ -23,7 +23,6 @@ class SimulationManager:
 	def __init__(self):
 		self.running = False
 		self.start_time = None
-		self.duration = 60.0
 		self.elapsed = 0
 
 		self.total_customers_seen = 0
