@@ -20,7 +20,6 @@ class Lane:
 		self.is_regular = None
 		self.customers = []
 		self.customer_processed = False
-		self.process_time = None
 		self.opened = opened
 		self.capacity = capacity
 
