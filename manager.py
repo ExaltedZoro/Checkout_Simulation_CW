@@ -23,7 +23,6 @@ class SimulationManager:
 	def __init__(self):
 		self.running = False
 		self.start_time = None
-		self.duration = 60.0
 		self.elapsed = 0
 
 		self.total_customers_seen = 0
@@ -217,6 +216,6 @@ class SimulationManager:
 						# Resetting time elapsed to prevent issues with how the class determines when to remove an item
 						customer.time_elapsed = 0
 						lane_2.add_customer(customer)
-						print(f"Customer {customer.id} moved from Lane {self.lanes.index(lane)} to {self.lanes.index(lane_2)}")
+						print(f"Customer {customer.id} moved from Lane {self.lanes.index(lane) + 1} to {self.lanes.index(lane_2) + 1}")
 					else:
 						break

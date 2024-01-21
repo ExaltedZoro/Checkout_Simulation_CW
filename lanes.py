@@ -20,7 +20,6 @@ class Lane:
 		self.is_regular = None
 		self.customers = []
 		self.customer_processed = False
-		self.process_time = None
 		self.opened = opened
 		self.capacity = capacity
 
@@ -32,18 +31,20 @@ class Lane:
 		remove_customer = self.customers[0].process_tick(self.process_time)
 		if remove_customer:
 			self.customers.pop(0)
-			self.output_customer_processed()
+			self.output_customer_processed(self.customers[0].id)
 			self.customer_processed = True
 
 	def add_customer(self, customer):
+		"""Adds a customer to the end of the lane queue"""
 		self.customers.append(customer)
 
 	def pop(self):
+		"""Returns the last customer in the queue"""
 		return self.customers.pop()
 
-	def output_customer_processed(self):
+	def output_customer_processed(self, customer_id):
 		"""Lets the user know that a customer has been processed and removed from a lane"""
-		print(f"Customer finished checkout at {'Cashier' if self.is_regular else 'Self-Service'} Lane\n")
+		print(f"Customer {customer_id} finished checkout at {'Cashier' if self.is_regular else 'Self-Service'} Lane\n")
 
 	def data(self):
 		"""Returns a dictionary of the lanes data"""
@@ -108,7 +109,7 @@ class SelfServiceLane(Lane):
 					# If the queue size is not above 8, removing the customer from the list would mess with the for loop
 					# so, we add it to a separate list to be removed later
 					customers_to_remove.append(customer)
-				print(f"Customer {customer.id} finished checkout at Self Service")
+				self.output_customer_processed(customer.id)
 				self.customer_processed += 1
 
 		# Iterates through the finished customers and removes them from the lane

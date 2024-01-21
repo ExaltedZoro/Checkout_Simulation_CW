@@ -38,7 +38,8 @@ class Customer:
 		When the customer hits a process time as given to them by a lane,
 		one item in their basket is removed.
 		This method is exclusively called by a Lane, which must also pass in a process integer,
-		representing how long it takes to process an item."""
+		representing how long it takes to process an item.
+		This method returns True if the customer should be removed from the lane after being full processed, and False otherwise"""
 		self.time_elapsed += 1
 		if self.time_elapsed % process == 0:
 			self.basket_items -= 1
