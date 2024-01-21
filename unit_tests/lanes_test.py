@@ -26,7 +26,3 @@ class LaneUnitTest(unittest.TestCase):
         self.assertEqual(self.lane.queue_size(), 5, "Queue size should be 5")
         self.lane.pop()
         self.assertEqual(self.lane.queue_size(), 4, "Queue size should be 4")
-
-
-
-
